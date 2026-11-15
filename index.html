@@ -7420,7 +7420,7 @@
      fica escondido (os dados continuam no arquivo e voltam a aparecer quando o módulo for ligado).
      Para ver tudo (testes ou uso avançado): localStorage 'controle-financeiro-nivel' = 7. */
   /* Versão do app: atualize a cada entrega (o sw.js usa o mesmo número no nome do cache). */
-  var VERSAO_APP = { numero: '21', data: '2026-11-15', novidade: 'Metas: junte dinheiro para seus objetivos e acompanhe o progresso' };
+  var VERSAO_APP = { numero: '22', data: '2026-11-15', novidade: 'script pronto da Planilha Google, que cria a planilha sozinho' };
   var CHAVE_VERSAO_VISTA = 'controle-financeiro-versao-vista';
   function textoVersao() { return 'Versão ' + VERSAO_APP.numero + ' · atualizada em ' + dataBR(VERSAO_APP.data) + '.'; }
   /* Procurar atualização: confere se há internet, apaga só a cópia do app (código e ícones; os dados
@@ -8619,7 +8619,7 @@
           function (e) { throw new Error(e && e.name === 'AbortError' ? 'A planilha demorou demais para responder.' : 'Sem conexão com a planilha.'); })
         .then(function (txt) {
           var j; try { j = JSON.parse(txt); } catch (e) { throw new Error('Resposta inesperada. Confira se o endereço é o do “App da Web” e se o acesso está como “Qualquer pessoa”.'); }
-          if (j.erro) throw new Error(j.erro === 'acesso negado' ? 'A chave de acesso não confere com a do script.' : j.erro);
+          if (j.erro) throw new Error(String(j.erro).indexOf('acesso negado') === 0 ? 'A chave de acesso não confere com a do script.' : j.erro);
           return j;
         })
         .then(function (j) { if (t) clearTimeout(t); ok(j); }, function (e) { if (t) clearTimeout(t); falha(e); });
@@ -8748,43 +8748,10 @@
   }
 
   /* ---- Script da planilha (o app gera com a chave de acesso já dentro) ---- */
-  function scriptPlanilha(chave) {
-    return [
-      '// Controle Financeiro — sincronização. Guarda só dados CIFRADOS (o Google não consegue ler).',
-      '// Não compartilhe este código: a chave abaixo dá acesso de leitura e gravação ao arquivo cifrado.',
-      "var CHAVE_ACESSO = '" + chave + "';",
-      'function resp(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }',
-      "function doGet() { return resp({ ok: true, app: 'controle-financeiro' }); }",
-      'function doPost(e) {',
-      '  var req; try { req = JSON.parse(e.postData.contents); } catch (x) { return resp({ erro: "pedido inválido" }); }',
-      "  if (req.chave !== CHAVE_ACESSO) return resp({ erro: 'acesso negado' });",
-      '  var lock = LockService.getScriptLock(); lock.waitLock(25000);',
-      '  try {',
-      '    var ss = SpreadsheetApp.getActiveSpreadsheet();',
-      "    var sh = ss.getSheetByName('nuvem') || ss.insertSheet('nuvem');",
-      "    var versao = Number(sh.getRange('A1').getValue()) || 0;",
-      "    if (req.acao === 'ler') {",
-      '      if (req.desde !== undefined && Number(req.desde) === versao && versao > 0) return resp({ versao: versao, igual: true });',
-      '      var n = sh.getLastRow(), env = "";',
-      '      if (n >= 3) env = sh.getRange(3, 1, n - 2, 1).getValues().map(function (r) { return String(r[0]).slice(1); }).join("");',
-      "      return resp({ versao: versao, env: env || null });",
-      '    }',
-      "    if (req.acao === 'gravar') {",
-      '      if (Number(req.base) !== versao) return resp({ conflito: true, versao: versao });',
-      '      var txt = String(req.env || ""), partes = [];',
-      '      for (var i = 0; i < txt.length; i += 40000) partes.push(["x" + txt.substr(i, 40000)]);',
-      '      var ultima = sh.getLastRow(); if (ultima >= 3) sh.getRange(3, 1, ultima - 2, 1).clearContent();',
-      '      if (partes.length) sh.getRange(3, 1, partes.length, 1).setValues(partes);',
-      '      versao++;',
-      "      sh.getRange('A1:C1').setValues([[versao, new Date(), String(req.aparelho || '')]]);",
-      "      sh.getRange('A2').setValue('Dados cifrados do Controle Financeiro. Não edite esta aba.');",
-      '      return resp({ ok: true, versao: versao });',
-      '    }',
-      "    return resp({ erro: 'ação desconhecida' });",
-      '  } finally { lock.releaseLock(); }',
-      '}'
-    ].join('\n');
-  }
+  /* Script pronto do Google Apps Script (o mesmo do arquivo controle-financeiro-sync.gs). Ele cria a pasta e a planilha no Drive
+     e gera a chave de acesso na primeira execução da função “configurar”. */
+  var SCRIPT_SYNC = "// =====================================================================\n//  Controle Financeiro — sincronização pela sua conta Google\n//\n//  Este script cria sozinho, no SEU Google Drive:\n//    • a pasta \"Controle Financeiro\"\n//    • a planilha \"Controle Financeiro – nuvem (não editar)\", com as abas:\n//        nuvem    → os dados do app, CIFRADOS (o Google não consegue ler)\n//        registro → data, aparelho e versão de cada gravação\n//        leia-me  → explicações\n//  e gera uma CHAVE DE ACESSO só sua, que você cola no app.\n//\n//  Como usar (uma vez só):\n//    1. Selecione a função \"configurar\" lá em cima e clique em Executar.\n//       Autorize com sua conta Google.\n//    2. Copie a CHAVE DE ACESSO que aparece no \"Registro de execução\".\n//    3. Implantar › Nova implantação › App da Web\n//       (Executar como: Eu · Quem pode acessar: Qualquer pessoa).\n//    4. No app: cole a URL do app da Web (termina em /exec) e a chave.\n//\n//  Não compartilhe a chave: com ela e a URL dá para ler e gravar o\n//  arquivo cifrado (mas não para abrir os dados, que pedem usuário e senha).\n// =====================================================================\n\nvar NOME_PASTA = 'Controle Financeiro';\nvar NOME_PLANILHA = 'Controle Financeiro – nuvem (não editar)';\nvar TAM_PEDACO = 40000;      // caracteres por célula (limite do Google: 50.000)\nvar MAX_REGISTRO = 500;      // linhas guardadas na aba \"registro\"\n\n// Rode esta função uma vez pelo editor. Pode rodar de novo quando quiser\n// ver a chave: ela não muda e a planilha não é recriada.\nfunction configurar() {\n  var props = PropertiesService.getScriptProperties();\n  var chave = props.getProperty('CHAVE_ACESSO');\n  if (!chave) {\n    chave = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 40);\n    props.setProperty('CHAVE_ACESSO', chave);\n  }\n  var ss = planilha_();\n  Logger.log('Tudo pronto!');\n  Logger.log('Planilha: ' + ss.getUrl());\n  Logger.log('CHAVE DE ACESSO (cole no app): ' + chave);\n  Logger.log('Agora: Implantar › Nova implantação › App da Web (Executar como: Eu · Quem pode acessar: Qualquer pessoa).');\n  return chave;\n}\n\n// Só se precisar trocar a chave (ex.: alguém indevido ficou com ela).\n// Depois, reconecte os aparelhos com a chave nova.\nfunction trocarChave() {\n  PropertiesService.getScriptProperties().deleteProperty('CHAVE_ACESSO');\n  return configurar();\n}\n\nfunction resp_(o) {\n  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);\n}\n\nfunction doGet() {\n  return resp_({ ok: true, app: 'controle-financeiro', configurado: !!PropertiesService.getScriptProperties().getProperty('CHAVE_ACESSO') });\n}\n\nfunction doPost(e) {\n  var req;\n  try { req = JSON.parse(e.postData.contents); } catch (x) { return resp_({ erro: 'pedido inválido' }); }\n  var chave = PropertiesService.getScriptProperties().getProperty('CHAVE_ACESSO');\n  if (!chave) return resp_({ erro: 'script ainda não configurado: no editor do Apps Script, rode a função \"configurar\"' });\n  if (!req || req.chave !== chave) return resp_({ erro: 'acesso negado (confira a chave de acesso)' });\n\n  var lock = LockService.getScriptLock();\n  lock.waitLock(25000);\n  try {\n    var ss = planilha_();\n    var sh = ss.getSheetByName('nuvem');\n    var versao = Number(sh.getRange('A1').getValue()) || 0;\n\n    if (req.acao === 'ler') {\n      if (req.desde !== undefined && Number(req.desde) === versao && versao > 0) return resp_({ versao: versao, igual: true });\n      var n = sh.getLastRow(), env = '';\n      if (n >= 3) env = sh.getRange(3, 1, n - 2, 1).getValues().map(function (r) { return String(r[0]).slice(1); }).join('');\n      return resp_({ versao: versao, env: env || null });\n    }\n\n    if (req.acao === 'gravar') {\n      if (Number(req.base) !== versao) return resp_({ conflito: true, versao: versao });\n      var txt = String(req.env || ''), partes = [];\n      for (var i = 0; i < txt.length; i += TAM_PEDACO) partes.push(['x' + txt.substr(i, TAM_PEDACO)]);\n      var ultima = sh.getLastRow();\n      if (ultima >= 3) sh.getRange(3, 1, ultima - 2, 1).clearContent();\n      if (partes.length) sh.getRange(3, 1, partes.length, 1).setValues(partes);\n      versao++;\n      sh.getRange('A1:C1').setValues([[versao, new Date(), String(req.aparelho || '')]]);\n      sh.getRange('A2').setValue('Dados cifrados do Controle Financeiro. Não edite esta aba.');\n      registrar_(ss, versao, String(req.aparelho || ''), txt.length);\n      return resp_({ ok: true, versao: versao });\n    }\n\n    return resp_({ erro: 'ação desconhecida' });\n  } finally {\n    lock.releaseLock();\n  }\n}\n\n// Abre a planilha do app; se ainda não existir (ou tiver sido apagada), cria.\nfunction planilha_() {\n  var props = PropertiesService.getScriptProperties();\n  var id = props.getProperty('PLANILHA_ID');\n  if (id) {\n    try {\n      var existente = SpreadsheetApp.openById(id);\n      if (!DriveApp.getFileById(id).isTrashed()) { prepararAbas_(existente); return existente; }\n    } catch (x) { /* apagada ou sem acesso: cria outra */ }\n  }\n  var ss = SpreadsheetApp.create(NOME_PLANILHA);\n  var pastas = DriveApp.getFoldersByName(NOME_PASTA);\n  var pasta = pastas.hasNext() ? pastas.next() : DriveApp.createFolder(NOME_PASTA);\n  DriveApp.getFileById(ss.getId()).moveTo(pasta);\n  prepararAbas_(ss);\n  props.setProperty('PLANILHA_ID', ss.getId());\n  return ss;\n}\n\nfunction prepararAbas_(ss) {\n  var nuvem = ss.getSheetByName('nuvem');\n  if (!nuvem) {\n    var primeira = ss.getSheets()[0];\n    if (primeira && primeira.getLastRow() === 0 && ss.getSheets().length === 1 && !ss.getSheetByName('registro')) {\n      nuvem = primeira.setName('nuvem');\n    } else {\n      nuvem = ss.insertSheet('nuvem');\n    }\n    nuvem.getRange('A1:C1').setValues([[0, '', '']]);\n    nuvem.getRange('A2').setValue('Dados cifrados do Controle Financeiro. Não edite esta aba.');\n    nuvem.setColumnWidth(1, 220);\n  }\n  var reg = ss.getSheetByName('registro');\n  if (!reg) {\n    reg = ss.insertSheet('registro');\n    reg.getRange('A1:D1').setValues([['Quando', 'Aparelho', 'Versão', 'Tamanho (caracteres)']]).setFontWeight('bold');\n    reg.setFrozenRows(1);\n    reg.setColumnWidth(1, 170); reg.setColumnWidth(2, 220);\n  }\n  var leia = ss.getSheetByName('leia-me');\n  if (!leia) {\n    leia = ss.insertSheet('leia-me');\n    leia.getRange('A1:A8').setValues([\n      ['Controle Financeiro — planilha de sincronização'],\n      ['• A aba \"nuvem\" guarda os dados do app CIFRADOS. Não edite, não ordene e não apague nada nela.'],\n      ['• A aba \"registro\" mostra cada gravação feita pelos aparelhos (só para conferência).'],\n      ['• Para abrir os dados é preciso o usuário e a senha do app: esta planilha sozinha não mostra nada.'],\n      ['• Não compartilhe esta planilha. Quem usa o app com você só precisa do código de conexão (no app: Ajustes › Sincronização).'],\n      ['• Se apagar esta planilha, o script cria outra vazia; os aparelhos enviam de novo os dados que têm.'],\n      ['• Para trocar a chave de acesso: no Apps Script, rode a função \"trocarChave\" e reconecte os aparelhos.'],\n      ['']\n    ]);\n    leia.getRange('A1').setFontWeight('bold').setFontSize(13);\n    leia.setColumnWidth(1, 820);\n  }\n}\n\nfunction registrar_(ss, versao, aparelho, tamanho) {\n  try {\n    var reg = ss.getSheetByName('registro');\n    reg.appendRow([new Date(), aparelho || '—', versao, tamanho]);\n    var excesso = reg.getLastRow() - 1 - MAX_REGISTRO;\n    if (excesso > 0) reg.deleteRows(2, excesso);\n  } catch (x) { /* o registro é só informativo */ }\n}\n";
+  function scriptPlanilha() { return SCRIPT_SYNC; }
   function codigoConexao(cfg) { return 'CFN1.' + btoa(unescape(encodeURIComponent(JSON.stringify({ u: cfg.url, k: cfg.chave })))); }
   function lerCodigoConexao(t) {
     t = String(t || '').trim().replace(/\s+/g, '');
@@ -8824,20 +8791,23 @@
   }
   function formConfigurarNuvem() {
     if (!protecao || !chaveDados) { avisar('Crie o login do app antes de configurar a planilha.', 'erro'); return; }
-    var chave = b64(aleatorio(24)).replace(/[^A-Za-z0-9]/g, '').slice(0, 32);
-    var script = scriptPlanilha(chave);
+    var script = scriptPlanilha();
     abrirGen('Configurar a Planilha Google', [
+      { tipo: 'html', conteudo: el('div', { class: 'dica-form' }, 'O script cria sozinho a pasta “Controle Financeiro” e a planilha no seu Google Drive. Faça num computador: é mais fácil.') },
       { tipo: 'html', conteudo: el('ol', { class: 'nuvem-passos' },
-        el('li', null, 'No Google Drive (de preferência num computador), crie uma ', el('b', null, 'planilha nova'), ' — ex.: “Finanças – nuvem”.'),
-        el('li', null, 'Na planilha: menu ', el('b', null, 'Extensões › Apps Script'), '. Apague o que estiver lá e cole o script (botão abaixo). Salve (ícone de disquete).'),
-        el('li', null, el('b', null, 'Implantar › Nova implantação'), ' › engrenagem › ', el('b', null, 'App da Web'), '. Executar como: ', el('b', null, 'Eu'), '. Quem pode acessar: ', el('b', null, 'Qualquer pessoa'), ' › Implantar › autorize com sua conta Google. Se aparecer “O Google não verificou este app”, toque em ', el('b', null, 'Avançado › Acessar (não seguro)'), ' — o script é seu e só mexe nesta planilha.'),
-        el('li', null, 'Copie a ', el('b', null, 'URL do app da Web'), ' (termina em /exec) e cole aqui embaixo.')) },
+        el('li', null, 'Abra ', el('b', null, 'script.google.com'), ' (com a sua conta Google) › ', el('b', null, 'Novo projeto'), '. Apague o que estiver lá, cole o script (botão abaixo) e salve (ícone de disquete).'),
+        el('li', null, 'Lá em cima, escolha a função ', el('b', null, 'configurar'), ' e clique em ', el('b', null, 'Executar'), '. Autorize com sua conta. Se aparecer “O Google não verificou este app”: ', el('b', null, 'Avançado › Acessar (não seguro)'), ' — o script é seu.'),
+        el('li', null, 'No ', el('b', null, 'Registro de execução'), ', copie a ', el('b', null, 'CHAVE DE ACESSO'), ' e cole aqui embaixo.'),
+        el('li', null, el('b', null, 'Implantar › Nova implantação'), ' › engrenagem › ', el('b', null, 'App da Web'), '. Executar como: ', el('b', null, 'Eu'), '. Quem pode acessar: ', el('b', null, 'Qualquer pessoa'), ' › Implantar.'),
+        el('li', null, 'Copie a ', el('b', null, 'URL do app da Web'), ' (termina em /exec), cole aqui embaixo e toque em Conectar.')) },
       { tipo: 'html', conteudo: el('div', { class: 'aj-acoes' }, el('button', { type: 'button', class: 'btn', id: 'btnCopiarScript' }, ico('copy', 'ico-inline'), ' Copiar o script'), el('button', { type: 'button', class: 'btn', id: 'btnVerScript' }, 'Mostrar o script')) },
       { tipo: 'html', conteudo: el('pre', { class: 'nuvem-codigo', id: 'scriptTexto', hidden: 'hidden' }, script) },
+      { id: 'chave', rotulo: 'Chave de acesso (do Registro de execução)', obrig: true, largo: true, placeholder: 'ex.: 3f9c…', max: 80, autocomplete: 'off' },
       { id: 'url', rotulo: 'URL do app da Web', obrig: true, largo: true, placeholder: 'https://script.google.com/macros/s/…/exec', max: 400 },
-      { tipo: 'html', conteudo: el('div', { class: 'dica-form' }, 'Por segurança, o script tem uma chave de acesso só sua. Se fechar esta janela antes de terminar, comece de novo e copie o script outra vez.') }
+      { tipo: 'html', conteudo: el('div', { class: 'dica-form' }, 'Já usava uma planilha com o script antigo? Ela continua funcionando: não precisa refazer.') }
     ], function (v) {
-      var url = v.url.trim();
+      var url = v.url.trim(), chave = v.chave.replace(/^.*CHAVE DE ACESSO[^:]*:\s*/i, '').trim();
+      if (!/^[A-Za-z0-9]{20,80}$/.test(chave)) return ['A chave de acesso tem só letras e números (40 caracteres). Copie de novo do Registro de execução.'];
       if (!urlScriptValida(url)) return ['A URL deve começar com https://script.google.com/ (é a “URL do app da Web”).'];
       var cfg = { url: url, chave: chave };
       return chamar(cfg, { acao: 'ler' }).then(function (rem) {
