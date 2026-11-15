@@ -1543,6 +1543,29 @@
   .hm-trilho { grid-column: 2 / 4; }
   .hm-trilho .meta-trilho { height: 6px; }
   html.valores-ocultos :is(.meta-guardado, .meta-de, .meta-linha, .meta-tot, .hm-valor, .meta-hist-fim b) { filter: blur(7px); user-select: none; -webkit-user-select: none; }
+
+  /* Guia: ligar outros aparelhos */
+  .guia-aparelhos { margin-top: 14px; border: 1px solid var(--borda-suave); border-radius: var(--raio-md); background: var(--sup-2); padding: 0 14px; }
+  .guia-aparelhos > summary { cursor: pointer; padding: 12px 0; font-weight: 700; color: var(--texto); list-style-position: inside; }
+  .guia-aparelhos[open] { padding-bottom: 14px; }
+  .guia-aparelhos .nuvem-passos { margin: 0 0 12px; }
+  .guia-aparelhos .nuvem-passos li { margin-bottom: 6px; line-height: 1.5; }
+  #segAparelhos .guia-aparelhos { margin-top: 6px; }
+
+  /* Barra de baixo com Metas: larguras pelo texto, para o + ficar no meio */
+  @media (max-width: 900px) {
+    html.modo-simples .bi-dentro { gap: 2px; padding: 0 2px; }
+    html.modo-simples .bi-dentro .bi-aba { flex: 1 1 auto; font-size: .7rem; padding: 6px 2px; white-space: nowrap; }
+    html.modo-simples .bi-dentro .bi-mais { flex: none; margin-left: 4px; margin-right: 4px; }
+  }
+  .selo-apagar.areceber { background: var(--receita-suave); color: var(--receita); }
+
+  /* Ícones coloridos nos lançamentos */
+  .emoji-cat { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; line-height: 1; font-style: normal; }
+  .lanc-ic, .lanc-ic-receita { background: var(--sup-2); border: 1px solid var(--borda-suave); }
+  .lanc-ic .emoji-cat { font-size: 1.25rem; }
+  .chip-cat .ci .emoji-cat { font-size: 1.1rem; }
+  .chip-cat .ci { color: inherit; }
 </style>
 </head>
 <body>
@@ -1555,6 +1578,7 @@
     <button type="button" class="bi-mais" id="biNovo" aria-label="Anotar gasto ou entrada"><i class="ico-ph" data-ico="plus"></i></button>
     <button type="button" class="bi-aba" data-bi="abaRec" data-modulo="recorrencias"><i class="bi-ic ico-ph" data-ico="repeat"></i>Fixas</button>
     <button type="button" class="bi-aba" data-bi="abaCartoes" data-modulo="cartoes"><i class="bi-ic ico-ph" data-ico="card"></i>Cartões</button>
+    <button type="button" class="bi-aba" data-bi="abaMetas"><i class="bi-ic ico-ph" data-ico="target"></i>Metas</button>
     <button type="button" class="bi-aba" data-bi="abaListas"><i class="bi-ic ico-ph" data-ico="sliders"></i>Ajustes</button>
   </div>
 </nav>
@@ -2211,6 +2235,10 @@
    <div id="segAcoesTopo" class="lim-topo-acoes"></div>
   </section>
   <div id="segUsuarios"></div>
+  <section class="painel aj-bloco" id="segAparelhos">
+   <h3><i class="ico-ph" data-ico="phone"></i> Usar em outros aparelhos</h3>
+   <div id="segAparelhosGuia"></div>
+  </section>
 
  </div>
 
@@ -2283,6 +2311,7 @@
    <p class="uso" id="nuvemTexto"></p>
    <p class="nuvem-status" id="nuvemStatus" hidden></p>
    <div class="aj-acoes" id="nuvemAcoes"></div>
+   <div id="nuvemGuia"></div>
   </section>
   <section class="painel aj-bloco so-simples" id="ajBackup">
    <h3><i class="ico-ph" data-ico="archive"></i> Backup</h3>
@@ -4010,7 +4039,7 @@
         celula('Data', dataBR(l.data), 'data'),
         el('td', { 'data-rotulo': 'Descrição', class: 'desc' },
           el('div', { class: 'desc-titulo' }, l.descricao, usaCaixaPagLanc(l) && l.status === 'Pendente'
-            ? el('span', { class: 'selo-apagar' + (l.data < hojeISO() ? ' vencido' : '') }, l.data < hojeISO() ? 'Vencido' : 'A pagar') : null),
+            ? el('span', { class: 'selo-apagar' + (l.tipo === 'receita' ? ' areceber' : '') + (l.data < hojeISO() ? ' vencido' : '') }, l.data < hojeISO() ? (l.tipo === 'receita' ? 'Atrasado' : 'Vencido') : txtCaixa(l.tipo).selo) : null),
           el('div', { class: 'info-pag' }, chips),
           infoMes ? el('div', { class: 'desc-sub so-simples' }, ico('card', 'ico-inline'), ' ' + infoMes.txt) : null,
           l.observacoes ? el('div', { class: 'obs-linha' }, l.observacoes) : null),
@@ -4019,11 +4048,11 @@
           : celula('Valor', l.valor < 0 ? [ico('undo', 'ico-inline'), ' ' + moeda(Math.abs(l.valor))] : sinal + moeda(l.valor), 'num valor-cel ' + (l.valor < 0 ? 'v-receita valor-credito' : 'v-' + l.tipo)),
         celula('Status', el('span', { class: 'selo ' + classeStatus(l.status) }, l.status)),
         el('td', { 'data-rotulo': 'Ações', class: 'acoes-linha' },
-          usaCaixaPagLanc(l) && podePagar(l) ? el('button', { type: 'button', class: 'btn link acao-paguei', 'data-acao': 'paguei', 'data-id': l.id, 'aria-label': 'Marcar ' + l.descricao + ' como pago hoje' }, '✓ Paguei') : null,
+          usaCaixaPagLanc(l) && podePagar(l) ? el('button', { type: 'button', class: 'btn link acao-paguei', 'data-acao': 'paguei', 'data-id': l.id, 'aria-label': 'Marcar ' + l.descricao + (l.tipo === 'receita' ? ' como recebido hoje' : ' como pago hoje') }, txtCaixa(l.tipo).rapido) : null,
           podePagar(l) ? el('button', { type: 'button', class: 'btn link acao-pagar', 'data-acao': 'pagar', 'data-id': l.id, 'aria-label': (l.tipo === 'receita' ? 'Receber ' : 'Pagar ') + l.descricao }, l.tipo === 'receita' ? 'Receber' : 'Pagar') : null,
           el('button', { type: 'button', class: 'btn link', 'data-acao': 'editar', 'data-id': l.id, 'aria-label': 'Editar ' + l.descricao }, 'Editar'),
           el('button', { type: 'button', class: 'btn link perigo-txt', 'data-acao': 'excluir', 'data-id': l.id, 'aria-label': 'Excluir ' + l.descricao }, 'Excluir')),
-        el('td', { class: 'ic-cel', 'aria-hidden': 'true' }, el('span', { class: 'lanc-ic lanc-ic-' + l.tipo }, iconeCategoria(l.categoria || '', l.tipo)))
+        el('td', { class: 'ic-cel', 'aria-hidden': 'true' }, el('span', { class: 'lanc-ic lanc-ic-' + l.tipo }, emojiCategoria(l.categoria || '', l.tipo)))
       );
       corpo.append(tr);
     });
@@ -7420,7 +7449,7 @@
      fica escondido (os dados continuam no arquivo e voltam a aparecer quando o módulo for ligado).
      Para ver tudo (testes ou uso avançado): localStorage 'controle-financeiro-nivel' = 7. */
   /* Versão do app: atualize a cada entrega (o sw.js usa o mesmo número no nome do cache). */
-  var VERSAO_APP = { numero: '22', data: '2026-11-15', novidade: 'script pronto da Planilha Google, que cria a planilha sozinho' };
+  var VERSAO_APP = { numero: '25', data: '2026-11-15', novidade: 'ícones coloridos de volta nos lançamentos' };
   var CHAVE_VERSAO_VISTA = 'controle-financeiro-versao-vista';
   function textoVersao() { return 'Versão ' + VERSAO_APP.numero + ' · atualizada em ' + dataBR(VERSAO_APP.data) + '.'; }
   /* Procurar atualização: confere se há internet, apaga só a cópia do app (código e ícones; os dados
@@ -7640,6 +7669,14 @@
     [/outro|divers/, 'package']
   ];
   function iconeCategoria(nome, tipo) { return ico(nomeIconeCategoria(nome, tipo)); }
+  /* Ícones coloridos (emoji) usados nos lançamentos: lista e botões de categoria do formulário. */
+  var EMOJI_ICONE = { bag: '🛍️', utensils: '🍽️', users: '🧸', droplet: '💧', cart: '🛒', home: '🏠', car: '🚗', health: '💊', book: '📚',
+    ticket: '🎉', plane: '✈️', shirt: '👕', zap: '⚡', phone: '📱', tv: '📺', heart: '🐾', gift: '🎁', file: '🧾', scissors: '💇',
+    shield: '🛡️', dumbbell: '🏋️', briefcase: '💼', wrench: '🧰', trending: '📈', 'rotate-ccw': '↩️', key: '🔑', tag: '🏷️',
+    award: '🏆', card: '💳', landmark: '🏦', package: '📦', coins: '💰' };
+  function emojiCategoria(nome, tipo) {
+    return el('span', { class: 'emoji-cat' }, EMOJI_ICONE[nomeIconeCategoria(nome, tipo)] || (tipo === 'receita' ? '💰' : '🏷️'));
+  }
   function nomeIconeCategoria(nome, tipo) {
     var n = normalizar(nome || '');
     for (var i = 0; i < ICONES_CAT.length; i++) if (ICONES_CAT[i][0].test(n)) return ICONES_CAT[i][1];
@@ -7658,7 +7695,7 @@
       var at = sel.value === o.value;
       box.append(el('button', { type: 'button', class: 'chip-cat' + (at ? ' ativo' : '') + (at && sel.dataset.sugerido ? ' sugerido' : ''),
         'data-cat': o.value, 'aria-pressed': at ? 'true' : 'false' },
-        el('span', { class: 'ci', 'aria-hidden': 'true' }, iconeCategoria(o.value, tipo)), el('span', { class: 'cn' }, o.value)));
+        el('span', { class: 'ci', 'aria-hidden': 'true' }, emojiCategoria(o.value, tipo)), el('span', { class: 'cn' }, o.value)));
     });
     $('categoriaWrap').classList.toggle('invalido-chips', sel.classList.contains('invalido'));
     var d = $('f_data').value, hoje = hojeISO();
@@ -8139,7 +8176,7 @@
     if (orig && orig.status === 'Cancelado') return 'Cancelado';
     if (tipo === 'transferencia') return st.value;
     if (tipo === 'despesa' && cartao) return orig && ehCompraCartao(orig) ? orig.status : 'Pendente';
-    if (tipo === 'despesa' && caixaPagAtiva()) return $('caixaPag').dataset.pago === '1' ? 'Pago' : 'Pendente';
+    if ((tipo === 'despesa' || tipo === 'receita') && caixaPagAtiva()) return $('caixaPag').dataset.pago === '1' ? statusLiquidado(tipo) : 'Pendente';
     return tipo === 'receita' ? 'Recebido' : 'Pago';
   }
   var ICONES_MEIO = { 'Conta bancária': 'landmark', 'Cartão de crédito': 'card', 'Vale-refeição (VR)': 'utensils', 'Vale-alimentação (VA)': 'cart', 'Dinheiro': 'banknote', 'Outro': 'more' };
@@ -8315,11 +8352,21 @@
      “Já paguei” em outra data: registra o pagamento (sem conta) com essa data.
      “Vou pagar”: fica A pagar; a data do gasto vira o vencimento. Desfazer = voltar para “Vou pagar”. */
   function usaCaixaPagLanc(l) {
-    return modoSimples() && !moduloAtivo('contas') && l.tipo === 'despesa' && !ehCompraCartao(l);
+    return modoSimples() && !moduloAtivo('contas') && (l.tipo === 'despesa' || l.tipo === 'receita') && !ehCompraCartao(l);
   }
   function caixaPagAtiva() {
-    return modoSimples() && !moduloAtivo('contas') && $('f_tipo').value === 'despesa' && $('f_meio').value !== MEIO_CARTAO && $('f_tipoGasto').value !== 'parcelado';
+    if (!modoSimples() || moduloAtivo('contas')) return false;
+    var t = $('f_tipo').value;
+    if (t === 'receita') return true;
+    return t === 'despesa' && $('f_meio').value !== MEIO_CARTAO && $('f_tipoGasto').value !== 'parcelado';
   }
+  function statusLiquidado(tipo) { return tipo === 'receita' ? 'Recebido' : 'Pago'; }
+  /* Textos da caixa: “Já paguei / Vou pagar” nos gastos e “Já recebi / Vou receber” nas entradas. */
+  var TXT_CAIXA = {
+    despesa: { sim: 'Já paguei', nao: 'Vou pagar', em: 'Pago em', grupo: 'Situação do pagamento', rot: 'Pagamento', venc: 'Vencimento', verbo: 'pagar', rapido: '✓ Paguei', selo: 'A pagar', futuro: 'A data do pagamento não pode ser no futuro.' },
+    receita: { sim: 'Já recebi', nao: 'Vou receber', em: 'Recebido em', grupo: 'Situação do recebimento', rot: 'Recebimento', venc: 'Previsto para', verbo: 'receber', rapido: '✓ Recebi', selo: 'A receber', futuro: 'A data do recebimento não pode ser no futuro.' }
+  };
+  function txtCaixa(tipo) { return TXT_CAIXA[tipo === 'receita' ? 'receita' : 'despesa']; }
   function pagamentosAtivosLanc(l) {
     return estado.pagamentos.filter(function (g) { return g.situacao === 'ativo' && g.tipo !== 'fatura' && g.lancamentoId === l.id; })
       .sort(function (a, b) { return a.data < b.data ? -1 : a.data > b.data ? 1 : 0; });
@@ -8327,7 +8374,7 @@
   function iniciarCaixaPag(original) {
     var cp = $('caixaPag'), hoje = hojeISO(), data = $('f_data').value, pago, quando;
     delete cp.dataset.tocado; delete $('f_pagoEm').dataset.tocado;
-    if (!original || original.tipo !== 'despesa') { pago = !(dataValida(data) && data > hoje); quando = pago ? data : hoje; }
+    if (!original || original.tipo !== $('f_tipo').value) { pago = !(dataValida(data) && data > hoje); quando = pago ? data : hoje; }
     else {
       var at = pagamentosAtivosLanc(original);
       if (at.length) { pago = centavosPendentes(original) === 0; quando = at[at.length - 1].data; }
@@ -8347,7 +8394,12 @@
     cp.hidden = !ativa;
     if (!ativa) return;
     $('dicaStatus').hidden = true; $('histPagamentos').hidden = true; // a caixa já mostra a situação
-    var hoje = hojeISO(), data = $('f_data').value, pe = $('f_pagoEm');
+    var hoje = hojeISO(), data = $('f_data').value, pe = $('f_pagoEm'), tx = txtCaixa($('f_tipo').value);
+    cp.querySelector('.rot-simples').textContent = tx.rot;
+    cp.querySelector('.cp-seg').setAttribute('aria-label', tx.grupo);
+    cp.querySelector('[data-pag="1"]').lastChild.textContent = ' ' + tx.sim;
+    cp.querySelector('[data-pag="0"]').lastChild.textContent = ' ' + tx.nao;
+    cp.querySelector('label[for="f_pagoEm"]').textContent = tx.em;
     // Sem escolha da pessoa: data futura = ainda vai pagar.
     if (!cp.dataset.tocado && dataValida(data)) cp.dataset.pago = data > hoje ? '0' : '1';
     var pago = cp.dataset.pago === '1';
@@ -8359,24 +8411,27 @@
       var at = pe.value === somarDias(hoje, +b.getAttribute('data-pago-rapido'));
       b.classList.toggle('ativo', at); b.setAttribute('aria-pressed', at ? 'true' : 'false');
     });
-    $('rotData').textContent = pago ? 'Data' : 'Vencimento';
-    var info = $('cpInfo');
-    if (pago) info.textContent = pe.value && pe.value > hoje ? 'A data do pagamento não pode ser no futuro.' : '';
+    $('rotData').textContent = pago ? 'Data' : tx.venc;
+    var info = $('cpInfo'), ehRec = $('f_tipo').value === 'receita';
+    if (pago) info.textContent = pe.value && pe.value > hoje ? tx.futuro : '';
+    else if (ehRec) info.textContent = dataValida(data)
+      ? (data < hoje ? 'Era para chegar em ' + dataBR(data) + '. ' : 'Previsto para ' + dataBR(data) + '. ') + 'Quando o dinheiro cair, toque em “✓ Recebi” na lista ou abra a entrada e escolha “Já recebi”.'
+      : 'Informe a data prevista.';
     else info.textContent = dataValida(data)
       ? (data < hoje ? 'Venceu em ' + dataBR(data) + '. ' : 'Vence em ' + dataBR(data) + '. ') + 'Quando pagar, toque em “✓ Paguei” na lista ou abra o gasto e escolha “Já paguei”.'
       : 'Informe a data de vencimento.';
     info.hidden = !info.textContent;
   }
   function planoPagamentoSimples(original, dados) {
-    if (!caixaPagAtiva() || dados.tipo !== 'despesa') return null;
-    var pago = $('caixaPag').dataset.pago === '1', data = $('f_pagoEm').value;
+    if (!caixaPagAtiva() || (dados.tipo !== 'despesa' && dados.tipo !== 'receita')) return null;
+    var pago = $('caixaPag').dataset.pago === '1', data = $('f_pagoEm').value, liqSt = statusLiquidado(dados.tipo), tx = txtCaixa(dados.tipo);
     var ativos = original ? pagamentosAtivosLanc(original) : [];
     var cancelado = original && original.status === 'Cancelado';
     if (cancelado) return { acao: 'manter', status: 'Cancelado' };
     if (!pago) return ativos.length ? { acao: 'refazer', pago: false } : { acao: 'manter', status: 'Pendente' };
-    if (!dataValida(data)) return { acao: 'manter', status: 'Pago', erro: 'Informe a data do pagamento.' };
-    if (data > hojeISO()) return { acao: 'manter', status: 'Pago', erro: 'A data do pagamento não pode ser no futuro.' };
-    if (data === dados.data) return ativos.length ? { acao: 'refazer', pago: true, manual: true } : { acao: 'manter', status: 'Pago' };
+    if (!dataValida(data)) return { acao: 'manter', status: liqSt, erro: dados.tipo === 'receita' ? 'Informe a data do recebimento.' : 'Informe a data do pagamento.' };
+    if (data > hojeISO()) return { acao: 'manter', status: liqSt, erro: tx.futuro };
+    if (data === dados.data) return ativos.length ? { acao: 'refazer', pago: true, manual: true } : { acao: 'manter', status: liqSt };
     var ult = ativos[ativos.length - 1];
     if (ativos.length === 1 && ult.data === data && isFinite(dados.valor) && centavos(ult.valor) === centavos(dados.valor)) return { acao: 'manter', status: original.status };
     return { acao: 'refazer', pago: true, data: data };
@@ -8384,9 +8439,9 @@
   function aplicarPlanoPag(p, l) {
     var agora = new Date().toISOString();
     pagamentosAtivosLanc(l).forEach(function (g) { g.situacao = 'estornado'; g.estornadoEm = agora; });
-    if (p.manual) { l.controlePagamento = false; l.status = 'Pago'; versaoDados++; return; }
+    if (p.manual) { l.controlePagamento = false; l.status = statusLiquidado(l.tipo); versaoDados++; return; }
     if (p.pago) {
-      var rp = validarPagamento({ id: 'g' + gerarId().slice(1), tipo: 'despesa', lancamentoId: l.id, contaId: '', valor: l.valor, data: p.data,
+      var rp = validarPagamento({ id: 'g' + gerarId().slice(1), tipo: l.tipo === 'receita' ? 'receita' : 'despesa', lancamentoId: l.id, contaId: '', valor: l.valor, data: p.data,
         observacoes: '', situacao: 'ativo', criadoEm: agora });
       if (rp.ok) { estado.pagamentos.push(rp.limpo); l.controlePagamento = true; }
     }
@@ -8396,15 +8451,15 @@
   function marcarPagoRapido(l) {
     if (!podePagar(l)) return;
     var foto = fotografia(), hoje = hojeISO();
-    if (l.data === hoje && !l.controlePagamento) { l.status = 'Pago'; l.atualizadoEm = new Date().toISOString(); versaoDados++; }
+    if (l.data === hoje && !l.controlePagamento) { l.status = statusLiquidado(l.tipo); l.atualizadoEm = new Date().toISOString(); versaoDados++; }
     else aplicarPlanoPag({ pago: true, data: hoje }, l);
     marcarAlterado(); render();
-    avisar('“' + l.descricao + '” marcado como pago hoje.', 'sucesso', desfazerPara(foto));
+    avisar('“' + l.descricao + '” marcado como ' + (l.tipo === 'receita' ? 'recebido' : 'pago') + ' hoje.', 'sucesso', desfazerPara(foto));
   }
   function totalAPagar(mes) {
     var t = 0, n = 0;
     estado.lancamentos.forEach(function (l) {
-      if (!usaCaixaPagLanc(l) || l.status !== 'Pendente' || String(l.data).slice(0, 7) > mes) return;
+      if (!usaCaixaPagLanc(l) || l.tipo !== 'despesa' || l.status !== 'Pendente' || String(l.data).slice(0, 7) > mes) return;
       if (String(l.data).slice(0, 7) < mes && mes !== mesAtual()) return; // atrasados aparecem no mês atual
       var v = centavosPendentes(l); if (v > 0) { t += v; n++; }
     });
@@ -8547,7 +8602,7 @@
           else nVar++;
         }
         var sit = situacaoFixaMes(r), acoes = el('span', { class: 'fixa-acoes' });
-        if (sit.lanc && usaCaixaPagLanc(sit.lanc) && podePagar(sit.lanc)) acoes.append(el('button', { type: 'button', class: 'btn pequeno primario', 'data-fixa-paguei': sit.lanc.id }, '✓ Paguei'));
+        if (sit.lanc && usaCaixaPagLanc(sit.lanc) && podePagar(sit.lanc)) acoes.append(el('button', { type: 'button', class: 'btn pequeno primario', 'data-fixa-paguei': sit.lanc.id }, txtCaixa(sit.lanc.tipo).rapido));
         if (sit.pedir) acoes.append(el('button', { type: 'button', class: 'btn pequeno primario', 'data-fixa-lancar': sit.oc.id }, 'Informar valor'));
         acoes.append(el('button', { type: 'button', class: 'btn link', 'data-regra-acao': 'editar', 'data-id': r.id }, 'Editar'),
           el('button', { type: 'button', class: 'btn link', 'data-regra-acao': 'ativo', 'data-id': r.id }, r.ativo ? 'Pausar' : 'Reativar'));
@@ -8771,6 +8826,7 @@
     var txt = $('nuvemTexto'), st = $('nuvemStatus'), ac = $('nuvemAcoes');
     if (!txt) return;
     ac.replaceChildren();
+    renderGuiasAparelhos();
     if (!nuvemAtiva()) {
       txt.textContent = 'Guarde seus dados também numa Planilha Google sua: eles ficam iguais no app, no Safari e no celular de outra pessoa da casa. Na planilha vai só o arquivo cifrado — o Google não lê os dados.';
       st.hidden = true;
@@ -8788,6 +8844,33 @@
     ac.append(el('button', { type: 'button', class: 'btn primario', 'data-nuvem': 'sincronizar' }, ico('refresh', 'ico-inline'), ' Sincronizar agora'),
       el('button', { type: 'button', class: 'btn', 'data-nuvem': 'codigo' }, 'Conectar outro aparelho'),
       el('button', { type: 'button', class: 'btn link perigo-txt', 'data-nuvem': 'desconectar' }, 'Desconectar'));
+  }
+  /* Passo a passo para ligar outro aparelho (fica em Ajustes › Sincronização e em Login e senha). */
+  function guiaOutrosAparelhos(aberto) {
+    var ativa = nuvemAtiva(), u = usuarioPorId(usuarioAtual);
+    var endereco = /github\.io$/.test(location.hostname) ? location.hostname + location.pathname.replace(/index\.html$/, '') : null;
+    var passos = el('ol', { class: 'nuvem-passos' },
+      el('li', null, 'Se for ', el('b', null, 'outra pessoa'), ', crie antes um usuário e senha para ela em ', el('b', null, 'Login e senha › + Novo usuário'), '. Se for você em outro aparelho, use o seu', u ? [' (', el('b', null, u.usuario), ')'] : '', '.'),
+      el('li', null, 'Neste aparelho, toque em ', el('b', null, 'Copiar código de conexão'), ' e envie o código para o outro aparelho, por exemplo por WhatsApp.'),
+      el('li', null, 'No outro aparelho, abra ', endereco ? el('b', null, endereco) : 'o app pelo mesmo endereço deste', ' e crie um acesso qualquer. Ele será trocado.'),
+      el('li', null, 'Lá, vá em ', el('b', null, 'Ajustes › Sincronização › Conectar a uma planilha existente'), ', cole o código e entre com o usuário e a senha do passo 1.'),
+      el('li', null, 'Pronto: os aparelhos passam a ver os mesmos dados. Faça o mesmo no Safari e no computador, se quiser usá-los.'));
+    var fim;
+    if (ativa) {
+      fim = el('div', { class: 'aj-acoes' }, el('button', { type: 'button', class: 'btn primario guia-copiar' }, ico('copy', 'ico-inline'), ' Copiar código de conexão'));
+      fim.querySelector('button').addEventListener('click', function () { copiarTexto(codigoConexao(nuvem), 'Código copiado. Envie para o outro aparelho.'); });
+    } else {
+      fim = el('p', { class: 'dica-form' }, 'Este aparelho ainda não está ligado à planilha. Se for o primeiro, use ', el('b', null, 'Ajustes › Sincronização › Configurar planilha'),
+        '. Se for o segundo aparelho, use ', el('b', null, 'Conectar a uma planilha existente'), ' com o código que o outro aparelho gerou.');
+    }
+    var d = el('details', { class: 'guia-aparelhos' }, el('summary', null, 'Como ligar outros aparelhos'), passos, fim);
+    if (aberto) d.open = true;
+    return d;
+  }
+  function renderGuiasAparelhos() {
+    var a = $('nuvemGuia'), b = $('segAparelhosGuia');
+    if (a) { var abertoA = a.querySelector('details') ? a.querySelector('details').open : false; a.replaceChildren(guiaOutrosAparelhos(abertoA)); }
+    if (b) b.replaceChildren(guiaOutrosAparelhos(true));
   }
   function formConfigurarNuvem() {
     if (!protecao || !chaveDados) { avisar('Crie o login do app antes de configurar a planilha.', 'erro'); return; }
@@ -8824,6 +8907,7 @@
     var cod = codigoConexao(nuvem);
     abrirGen('Conectar outro aparelho', [
       { tipo: 'html', conteudo: el('ol', { class: 'nuvem-passos' },
+        el('li', null, 'Para outra pessoa, crie antes um usuário e senha para ela em Login e senha › + Novo usuário.'),
         el('li', null, 'No outro aparelho, abra o app pelo mesmo endereço e crie um acesso qualquer (ele será trocado).'),
         el('li', null, 'Em Ajustes › Sincronização › ', el('b', null, 'Conectar a uma planilha existente'), ', cole o código abaixo.'),
         el('li', null, 'Entre com um usuário e senha ', el('b', null, 'deste'), ' app. Para outra pessoa, crie antes um usuário para ela em Login e senha › Gerenciar.')) },
@@ -9312,7 +9396,7 @@
       if (!i.venc || i.aberto <= 0 || i.venc > lim7 || (i.situacao !== 'vencida' && i.venc < hoje)) return;
       var acao = null;
       if (i.lanc && i.cartaoId) acao = ['Pagar fatura', { 'data-pagar-fatura': i.cartaoId + '|' + i.venc }];
-      else if (i.lanc && podePagar(i.lanc)) acao = [usaCaixaPagLanc(i.lanc) ? '✓ Paguei' : 'Pagar', { 'data-hoje-pagar': i.lanc.id }];
+      else if (i.lanc && podePagar(i.lanc)) acao = [usaCaixaPagLanc(i.lanc) ? txtCaixa(i.lanc.tipo).rapido : (i.lanc.tipo === 'receita' ? 'Receber' : 'Pagar'), { 'data-hoje-pagar': i.lanc.id }];
       else if (i.oc) acao = [modoSimples() && i.semValor ? 'Informar valor' : 'Lançar', { 'data-hoje-lancar': i.oc.id }];
       itens.push({ venc: i.venc, desc: i.descricao, valor: i.aberto, estimada: i.situacao === 'estimada', semValor: i.semValor, tipo: 'despesa', acao: acao,
         chave: i.cartaoId ? 'fat|' + i.cartaoId + '|' + i.venc : i.chave });
