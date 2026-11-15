@@ -1505,6 +1505,44 @@
   @media (prefers-reduced-motion: no-preference) and (max-width: 600px) {
     #modalConfirm:not([hidden]) > .modal { animation: cf-sobe-base .24s cubic-bezier(.2, .8, .2, 1); }
   }
+
+  /* ===== Metas ===== */
+  .metas-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+  .meta-card { background: var(--superficie); border: 1px solid var(--borda-suave); border-radius: var(--raio-lg); box-shadow: var(--sombra); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; transition: box-shadow .2s ease; }
+  .meta-card.destacado { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ocre) 55%, transparent); }
+  .meta-cab { display: flex; align-items: center; gap: 10px; }
+  .meta-cab > div { flex: 1 1 auto; min-width: 0; }
+  .meta-cab strong { display: block; font-family: 'Manrope', 'Inter', sans-serif; font-weight: 800; font-size: 1.02rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta-ic { width: 40px; height: 40px; border-radius: 12px; flex: none; display: inline-flex; align-items: center; justify-content: center; background: var(--ocre-suave); color: var(--ocre); }
+  :root[data-theme="light"] .meta-ic { color: #94681A; }
+  .meta-ic .ico { width: 20px; height: 20px; }
+  .meta-card.concluida .meta-ic { background: var(--receita-suave); color: var(--receita); }
+  .meta-valores { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
+  .meta-guardado { font-family: 'Manrope', 'Inter', sans-serif; font-size: 1.55rem; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .meta-de { color: var(--suave); font-size: .9rem; font-variant-numeric: tabular-nums; }
+  .meta-pct { margin-left: auto; font-weight: 700; color: var(--texto-2); font-variant-numeric: tabular-nums; }
+  .meta-trilho { height: 10px; border-radius: 999px; background: var(--sup-3); overflow: hidden; }
+  .meta-barra { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #C9962E, #E2BC6C); }
+  .meta-barra.ok { background: linear-gradient(90deg, #12875A, #2FB97A); }
+  .meta-linha { margin: 0; font-size: .88rem; color: var(--texto-2); }
+  .meta-linha.alerta { color: var(--pendente); }
+  .meta-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .meta-acoes .btn { flex: 1 1 120px; }
+  .meta-acoes .btn .ico { width: 18px; height: 18px; }
+  .meta-hist li { align-items: center; }
+  .meta-hist-fim { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .meta-hist-fim .btn.link { font-size: 1.1rem; line-height: 1; padding: 2px 8px; }
+  /* Início */
+  .hoje-metas-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .hm-item { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 6px 10px; padding: 8px 6px; border-radius: 12px; cursor: pointer; }
+  .hm-item:hover, .hm-item:focus-visible { background: var(--sup-2); outline: none; }
+  .hm-item .meta-ic { grid-row: span 2; }
+  .hm-nome { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hm-valor { font-weight: 700; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+  .hm-valor .uso { font-weight: 500; }
+  .hm-trilho { grid-column: 2 / 4; }
+  .hm-trilho .meta-trilho { height: 6px; }
+  html.valores-ocultos :is(.meta-guardado, .meta-de, .meta-linha, .meta-tot, .hm-valor, .meta-hist-fim b) { filter: blur(7px); user-select: none; -webkit-user-select: none; }
 </style>
 </head>
 <body>
@@ -1581,6 +1619,7 @@
     <div class="abas-grupo" role="presentation">Dia a dia</div>
     <button type="button" role="tab" class="aba ativa" id="tabHoje" data-aba="abaHoje" aria-controls="abaHoje" aria-selected="true">Hoje</button>
     <button type="button" role="tab" class="aba" id="tabLanc" data-aba="abaLanc" aria-controls="abaLanc" aria-selected="false">Lançamentos</button>
+    <button type="button" role="tab" class="aba" id="tabMetas" data-aba="abaMetas" aria-controls="abaMetas" aria-selected="false">Metas</button>
     <button type="button" role="tab" class="aba" id="tabObr" data-aba="abaObr" aria-controls="abaObr" aria-selected="false">Obrigações</button>
     <button type="button" role="tab" class="aba" id="tabOrc" data-aba="abaOrc" aria-controls="abaOrc" aria-selected="false">Orçamento</button>
     <button type="button" role="tab" class="aba" id="tabContas" data-aba="abaContas" aria-controls="abaContas" aria-selected="false">Saldos e faturas</button>
@@ -1746,6 +1785,8 @@
     <div id="hojeFaturas"></div></section>
    <section class="bloco hoje-bloco hoje-cats"><div class="hoje-cab"><h3>Para onde foi o dinheiro</h3><span class="uso" id="hojeCatsMes"></span></div>
     <div id="hojeCategorias"></div></section>
+   <section class="bloco hoje-bloco hoje-metas" id="hojeMetasBloco"><div class="hoje-cab"><h3>Metas</h3><button type="button" class="btn link" data-ir-aba="abaMetas">Ver metas</button></div>
+    <div id="hojeMetas"></div></section>
    <section class="bloco hoje-bloco hoje-evo so-simples"><div class="hoje-cab"><h3>Evolução em 6 meses</h3>
      <div class="evo-legenda" aria-hidden="true"><span class="evo-leg-e">Entrou</span><span class="evo-leg-s">Saiu</span></div></div>
     <div id="hojeEvolucao"></div></section>
@@ -2203,6 +2244,15 @@
   <div id="listaAtivosCad"></div>
  </div>
 
+ <div id="abaMetas" role="tabpanel" aria-labelledby="tabMetas" hidden>
+  <section class="fat-secao">
+   <div class="fat-titulo"><div><h3>Metas</h3><span class="uso">Junte dinheiro para seus objetivos: reserva de emergência, viagem, um carro. Anote quanto guardou e acompanhe quanto falta. O que você guarda aqui não entra no Entrou e Saiu do mês.</span></div>
+    <button type="button" class="btn primario" data-meta-acao="nova">+ Nova meta</button></div>
+   <div id="metasResumo" class="fixas-resumo" hidden></div>
+   <div id="metasLista" class="metas-grade"></div>
+  </section>
+ </div>
+
  <div id="abaCartoes" role="tabpanel" aria-labelledby="tabCartoes" hidden>
   <section class="so-simples fat-secao" aria-label="Faturas">
    <div class="fat-titulo" id="fatTitulo"><div><h3>Faturas</h3><span class="uso">A fatura se forma sozinha com as compras que você anota no cartão. Pagar a fatura não cria gasto novo.</span></div>
@@ -2530,7 +2580,7 @@
   // v5: orçamento mensal por categoria.
   var VERSAO_FORMATO = 6; // v6: categorias de receita separadas, cheque especial nas contas e “outros limites”
   var NATUREZAS = { fixa: 'Fixa', variavel: 'Variável' };
-  var ENTIDADES_V3 = ['pessoas', 'contas', 'pagamentos', 'ajustes', 'conciliacoes', 'recorrencias', 'ocorrencias', 'ativos', 'limites'];
+  var ENTIDADES_V3 = ['pessoas', 'contas', 'pagamentos', 'ajustes', 'conciliacoes', 'recorrencias', 'ocorrencias', 'ativos', 'limites', 'metas'];
   var TIPOS_CONTA = ['Conta corrente', 'Poupança', 'Dinheiro em espécie', 'Outra disponibilidade'];
   var TIPOS_LIMITE = ['Empréstimo pré-aprovado', 'Crédito consignado', 'Limite de financiamento', 'Cartão de loja', 'Crédito com garantia', 'Outro'];
   var TIPOS_ATIVO = ['Investimento', 'Aplicação financeira', 'Previdência', 'Imóvel', 'Veículo', 'Outro'];
@@ -2569,7 +2619,7 @@
     fontes: FONTES_PADRAO.slice(),
     cartoes: [],
     pessoas: [], contas: [], pagamentos: [], ajustes: [], conciliacoes: [], limites: [],
-    recorrencias: [], ocorrencias: [], ativos: [],
+    recorrencias: [], ocorrencias: [], ativos: [], metas: [],
     naturezaCategorias: {}, // categoria → 'fixa' | 'variavel' (padrão para lançamentos sem natureza própria)
     orcamentos: {},         // categoria → limite mensal (R$), consolidado da família
     salvoEm: null
@@ -2900,10 +2950,31 @@
     });
     return resultado(limpo, erros);
   }
+  /* Meta: objetivo de dinheiro guardado. Os depósitos e retiradas ficam na própria meta e não entram no Entrou/Saiu. */
+  function validarMeta(m) {
+    var limpo = {
+      id: idOu(m.id, 'm'), nome: texto(m.nome, 60), valorAlvo: Number(m.valorAlvo), dataAlvo: texto(m.dataAlvo, 10),
+      criadoEm: texto(m.criadoEm, 30) || new Date().toISOString(), arquivada: m.arquivada === true, aportes: []
+    }, erros = {};
+    if (!limpo.nome) erros.nome = 'Informe o nome da meta.';
+    if (!isFinite(limpo.valorAlvo) || limpo.valorAlvo <= 0 || limpo.valorAlvo > 1e11) erros.valorAlvo = 'Informe quanto quer juntar (ex.: 5000,00).';
+    else limpo.valorAlvo = dinheiro(limpo.valorAlvo);
+    if (limpo.dataAlvo && !dataValida(limpo.dataAlvo)) erros.dataAlvo = 'Data da meta inválida.';
+    if (m.aportes !== undefined && !Array.isArray(m.aportes)) erros.aportes = 'Movimentos da meta inválidos.';
+    var idsA = {};
+    (Array.isArray(m.aportes) ? m.aportes : []).slice(0, 2000).forEach(function (a) {
+      if (!a || typeof a !== 'object') return;
+      var v = Number(a.valor), id = idOu(a.id, 'a');
+      if (!dataValida(a.data) || !isFinite(v) || v === 0 || Math.abs(v) > 1e11 || idsA[id]) return;
+      idsA[id] = true;
+      limpo.aportes.push({ id: id, data: a.data, valor: dinheiro(v), nota: texto(a.nota, 80) });
+    });
+    return resultado(limpo, erros);
+  }
   var VALIDADORES_V3 = { pessoas: validarPessoa, contas: validarConta, pagamentos: validarPagamento, ajustes: validarAjuste,
-    conciliacoes: validarConciliacao, recorrencias: validarRecorrencia, ocorrencias: validarOcorrencia, ativos: validarAtivo, limites: validarLimite };
+    conciliacoes: validarConciliacao, recorrencias: validarRecorrencia, ocorrencias: validarOcorrencia, ativos: validarAtivo, limites: validarLimite, metas: validarMeta };
   var NOMES_V3 = { pessoas: 'Pessoa', contas: 'Conta', pagamentos: 'Pagamento', ajustes: 'Ajuste', conciliacoes: 'Conciliação',
-    recorrencias: 'Recorrência', ocorrencias: 'Ocorrência', ativos: 'Ativo', limites: 'Limite' };
+    recorrencias: 'Recorrência', ocorrencias: 'Ocorrência', ativos: 'Ativo', limites: 'Limite', metas: 'Meta' };
 
   function listaDeTextos(arr, nome) {
     if (!Array.isArray(arr)) throw new Error('Lista de ' + nome + ' ausente ou inválida.');
@@ -4026,6 +4097,7 @@
     renderLimites();
     renderSeguranca();
     renderMvp();
+    renderMetas();
     if (modoSimples()) {
       renderUltimoBackup(); renderFixasMvp(); if (!nuvemOcupada) renderNuvem();
       var protegidoAgora = !!protecao;
@@ -7348,7 +7420,7 @@
      fica escondido (os dados continuam no arquivo e voltam a aparecer quando o módulo for ligado).
      Para ver tudo (testes ou uso avançado): localStorage 'controle-financeiro-nivel' = 7. */
   /* Versão do app: atualize a cada entrega (o sw.js usa o mesmo número no nome do cache). */
-  var VERSAO_APP = { numero: '20', data: '2026-11-15', novidade: 'acabamento: login, avisos, confirmações e animações suaves' };
+  var VERSAO_APP = { numero: '21', data: '2026-11-15', novidade: 'Metas: junte dinheiro para seus objetivos e acompanhe o progresso' };
   var CHAVE_VERSAO_VISTA = 'controle-financeiro-versao-vista';
   function textoVersao() { return 'Versão ' + VERSAO_APP.numero + ' · atualizada em ' + dataBR(VERSAO_APP.data) + '.'; }
   /* Procurar atualização: confere se há internet, apaga só a cópia do app (código e ícones; os dados
@@ -7407,7 +7479,7 @@
     if (modoSimples()) {
       // Ordem do menu no modo simples: o dia a dia primeiro.
       var depois = $('tabLanc');
-      ['tabRec', 'tabCartoes'].forEach(function (id) { var t = $(id); if (t && depois && t.parentNode === depois.parentNode) { depois.after(t); depois = t; } });
+      ['tabRec', 'tabCartoes', 'tabMetas'].forEach(function (id) { var t = $(id); if (t && depois && t.parentNode === depois.parentNode) { depois.after(t); depois = t; } });
     }
     var grupo = null, visiveis = 0;
     Array.prototype.forEach.call(document.querySelectorAll('.lateral .abas > *'), function (n) {
@@ -7446,6 +7518,7 @@
     eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
     'eye-off': '<path d="M10.7 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.2 3.1"/><path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/>',
     'arrow-up': '<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>',
+    target: '<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     moon: '<path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/>',
     archive: '<rect x="2" y="4" width="20" height="5" rx="1.5"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/>',
@@ -7513,7 +7586,7 @@
   /* Ícones do menu lateral (só visual: o texto do botão continua o mesmo). */
   var ICONES_ABA = { abaHoje: 'home', abaLanc: 'list', abaRec: 'repeat', abaCartoes: 'card', abaListas: 'sliders', abaSeguranca: 'lock',
     abaObr: 'clock', abaOrc: 'gauge', abaContas: 'landmark', abaLimites: 'shield', abaDash: 'pie', abaTend: 'trending', abaPessoas: 'users',
-    abaCadContas: 'banknote', abaGuia: 'book-open' };
+    abaCadContas: 'banknote', abaGuia: 'book-open', abaMetas: 'target' };
   function iconesLateral() {
     Array.prototype.forEach.call(document.querySelectorAll('.lateral .aba[data-aba]'), function (b) {
       var n = ICONES_ABA[b.getAttribute('data-aba')];
@@ -7751,6 +7824,201 @@
     if (r >= 1e6) return 'R$ ' + (r / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
     if (r >= 1e3) return 'R$ ' + (r / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mil';
     return 'R$ ' + Math.round(r);
+  }
+
+  /* ---------- Metas ----------
+     Cada meta guarda seus depósitos (valor positivo) e retiradas (negativo). Nada disso mexe nos
+     lançamentos nem no Entrou/Saiu: é um controle à parte do dinheiro separado para cada objetivo. */
+  function metaPorId(id) { return estado.metas.filter(function (m) { return m.id === id; })[0] || null; }
+  function guardadoMeta(m) { return m.aportes.reduce(function (t, a) { return t + Math.round(a.valor * 100); }, 0); }
+  function iconeMeta(nome) {
+    var n = normalizar(nome || '');
+    var regras = [[/viag|ferias|passeio|disney|europa/, 'plane'], [/carro|moto|veiculo/, 'car'], [/casa|apartamento|imovel|reforma|aluguel/, 'home'],
+      [/reserva|emergencia|seguranca/, 'shield'], [/estud|curso|faculdade|escola|intercambio/, 'book'], [/presente|natal|aniversario/, 'gift'],
+      [/casamento|festa/, 'heart'], [/celular|computador|notebook|tv|eletron/, 'phone'], [/aposent|invest/, 'trending'], [/bebe|filho|crianca/, 'users']];
+    for (var i = 0; i < regras.length; i++) if (regras[i][0].test(n)) return regras[i][1];
+    return 'target';
+  }
+  function mesesAte(dataAlvo) {
+    var h = hojeISO(), m = (+dataAlvo.slice(0, 4) - +h.slice(0, 4)) * 12 + (+dataAlvo.slice(5, 7) - +h.slice(5, 7));
+    return m + 1; // conta o mês atual
+  }
+  function infoMeta(m) {
+    var alvo = Math.round(m.valorAlvo * 100), g = guardadoMeta(m), falta = Math.max(0, alvo - g), pct = alvo ? Math.min(100, Math.floor(g / alvo * 100)) : 0;
+    var r = { alvo: alvo, guardado: g, falta: falta, pct: pct, concluida: g >= alvo, porMes: null, atrasada: false, meses: null };
+    if (m.dataAlvo && !r.concluida) {
+      if (m.dataAlvo < hojeISO()) r.atrasada = true;
+      else { r.meses = Math.max(1, mesesAte(m.dataAlvo)); r.porMes = Math.ceil(falta / r.meses); }
+    }
+    return r;
+  }
+  function rotuloPrazoMeta(d) { return MESES[+d.slice(5, 7) - 1] + '/' + d.slice(0, 4); }
+  function seloMeta(m, i) {
+    if (i.concluida) return el('span', { class: 'selo s-pago' }, 'Concluída');
+    if (i.atrasada) return el('span', { class: 'selo s-pendente' }, 'Prazo passou');
+    if (m.dataAlvo) return el('span', { class: 'selo' }, 'até ' + rotuloPrazoMeta(m.dataAlvo));
+    return null;
+  }
+  function trilhoMeta(i) {
+    return el('div', { class: 'meta-trilho', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(i.pct), 'aria-label': i.pct + '% da meta' },
+      el('div', { class: 'meta-barra' + (i.concluida ? ' ok' : ''), style: 'width:' + Math.max(i.guardado > 0 ? 2 : 0, i.pct) + '%' }));
+  }
+  function renderMetas() {
+    var lista = $('metasLista'), res = $('metasResumo'), hj = $('hojeMetas');
+    if (!lista) return;
+    var metas = estado.metas.slice().sort(function (a, b) {
+      var ia = infoMeta(a), ib = infoMeta(b);
+      return (ia.concluida - ib.concluida) || ((a.dataAlvo || '9999') < (b.dataAlvo || '9999') ? -1 : (a.dataAlvo || '9999') > (b.dataAlvo || '9999') ? 1 : 0) || (a.criadoEm < b.criadoEm ? -1 : 1);
+    });
+    lista.replaceChildren(); hj.replaceChildren();
+    if (!metas.length) {
+      lista.append(el('div', { class: 'fat-vazio' }, el('p', null, 'Nenhuma meta ainda. Exemplos: reserva de emergência, viagem de férias, trocar de carro.'),
+        el('button', { type: 'button', class: 'btn primario', 'data-meta-acao': 'nova' }, '+ Criar primeira meta')));
+      res.hidden = true;
+      hj.append(el('div', { class: 'hoje-vazio' }, 'Crie uma meta para juntar dinheiro para um objetivo. ', el('button', { type: 'button', class: 'btn link', 'data-meta-acao': 'nova' }, 'Criar meta')));
+      return;
+    }
+    var totG = 0, totA = 0, conc = 0;
+    metas.forEach(function (m) {
+      var i = infoMeta(m);
+      totG += i.guardado; totA += i.alvo; if (i.concluida) conc++;
+      var linha = i.concluida ? 'Meta alcançada!' + (i.guardado > i.alvo ? ' Passou ' + moeda((i.guardado - i.alvo) / 100) + ' do objetivo.' : '')
+        : 'Faltam ' + moeda(i.falta / 100) + (i.porMes ? ' · guarde ' + moeda(i.porMes / 100) + ' por mês' + (i.meses > 1 ? ' até ' + rotuloPrazoMeta(m.dataAlvo) : ' neste mês') : i.atrasada ? ' · o prazo (' + dataBR(m.dataAlvo) + ') já passou' : '');
+      var hist = m.aportes.slice().sort(function (a, b) { return a.data < b.data ? 1 : a.data > b.data ? -1 : 0; });
+      var ul = el('ul');
+      hist.forEach(function (a) {
+        ul.append(el('li', null, el('span', null, a.valor > 0 ? 'Guardei' : 'Retirei', el('span', { class: 'uso' }, dataBR(a.data) + (a.nota ? ' · ' + a.nota : ''))),
+          el('span', { class: 'meta-hist-fim' }, el('b', { class: a.valor > 0 ? 'v-receita' : 'v-despesa' }, (a.valor > 0 ? '+ ' : '− ') + moeda(Math.abs(a.valor))),
+            el('button', { type: 'button', class: 'btn link perigo-txt', 'data-meta-acao': 'excluir-mov', 'data-id': m.id, 'data-mov': a.id, 'aria-label': 'Excluir este movimento' }, '×'))));
+      });
+      lista.append(el('article', { class: 'meta-card' + (i.concluida ? ' concluida' : ''), 'data-meta': m.id },
+        el('div', { class: 'meta-cab' }, el('span', { class: 'meta-ic', 'aria-hidden': 'true' }, ico(i.concluida ? 'award' : iconeMeta(m.nome))),
+          el('div', null, el('strong', null, m.nome)), seloMeta(m, i)),
+        el('div', { class: 'meta-valores' }, el('span', { class: 'meta-guardado' }, moeda(i.guardado / 100)), el('span', { class: 'meta-de' }, 'de ' + moeda(i.alvo / 100)), el('span', { class: 'meta-pct' }, i.pct + '%')),
+        trilhoMeta(i),
+        el('p', { class: 'meta-linha' + (i.atrasada ? ' alerta' : '') }, linha),
+        el('div', { class: 'meta-acoes' },
+          el('button', { type: 'button', class: 'btn primario', 'data-meta-acao': 'guardar', 'data-id': m.id }, ico('plus-circle'), 'Guardar'),
+          i.guardado > 0 ? el('button', { type: 'button', class: 'btn', 'data-meta-acao': 'retirar', 'data-id': m.id }, ico('minus-circle'), 'Retirar') : null),
+        hist.length ? el('details', { class: 'fat-compras meta-hist' }, el('summary', null, 'Movimentos (' + hist.length + ')'), ul) : null,
+        el('div', { class: 'fat-rodape' }, el('span', null, m.dataAlvo ? 'Prazo: ' + dataBR(m.dataAlvo) : 'Sem prazo definido'),
+          el('span', null, el('button', { type: 'button', class: 'btn link', 'data-meta-acao': 'editar', 'data-id': m.id }, 'Editar'),
+            el('button', { type: 'button', class: 'btn link perigo-txt', 'data-meta-acao': 'excluir', 'data-id': m.id }, 'Excluir')))));
+    });
+    res.hidden = false;
+    res.replaceChildren(el('span', null, 'Guardado em metas: ', el('b', { class: 'meta-tot' }, moeda(totG / 100))),
+      el('span', null, 'Objetivo total: ', el('b', { class: 'meta-tot' }, moeda(totA / 100))),
+      el('span', null, plural(metas.length, 'meta', 'metas') + (conc ? ' · ' + plural(conc, 'concluída', 'concluídas') : '')));
+    // Início: as 3 primeiras (não concluídas primeiro)
+    var ulH = el('ul', { class: 'hoje-metas-lista' });
+    metas.slice(0, 3).forEach(function (m) {
+      var i = infoMeta(m);
+      ulH.append(el('li', { class: 'hm-item', tabindex: '0', role: 'button', 'data-ir-meta': m.id, 'aria-label': m.nome + ': ' + i.pct + '% (' + moeda(i.guardado / 100) + ' de ' + moeda(i.alvo / 100) + ')' },
+        el('span', { class: 'meta-ic', 'aria-hidden': 'true' }, ico(i.concluida ? 'award' : iconeMeta(m.nome))),
+        el('span', { class: 'hm-nome' }, m.nome, el('span', { class: 'cat-pct' }, i.pct + '%')),
+        el('span', { class: 'hm-valor' }, moeda(i.guardado / 100), el('span', { class: 'uso' }, ' de ' + moeda(i.alvo / 100))),
+        el('span', { class: 'hm-trilho' }, trilhoMeta(i))));
+    });
+    hj.append(ulH);
+    if (metas.length > 3) hj.append(el('div', { class: 'uso' }, 'e mais ' + plural(metas.length - 3, 'meta', 'metas') + '.'));
+  }
+  function formMeta(id) {
+    var m = id ? metaPorId(id) : null;
+    abrirGen(m ? 'Editar meta' : 'Nova meta', [
+      { id: 'nome', rotulo: 'Nome da meta', obrig: true, largo: true, max: 60, valor: m ? m.nome : '', placeholder: 'Ex.: Reserva de emergência, Viagem' },
+      { id: 'alvo', rotulo: 'Quanto quer juntar (R$)', tipo: 'valor', obrig: true, valor: m ? formatarValorCampo(m.valorAlvo) : '', placeholder: '0,00' },
+      { id: 'data', rotulo: 'Até quando (opcional)', tipo: 'date', valor: m ? m.dataAlvo : '' },
+      m ? null : { id: 'ja', rotulo: 'Já tem algum valor guardado? (opcional)', tipo: 'valor', largo: true, valor: '', placeholder: '0,00', ajuda: 'Entra como primeiro depósito, com a data de hoje.' },
+      { tipo: 'html', conteudo: el('p', { class: 'uso' }, 'Com um prazo, o app mostra quanto guardar por mês. O dinheiro das metas não entra no Entrou e Saiu.') }
+    ].filter(Boolean), function (v) {
+      var alvo = parseValor(v.alvo), ja = v.ja ? parseValor(v.ja) : 0;
+      var r = validarMeta({ id: m ? m.id : undefined, nome: v.nome, valorAlvo: alvo, dataAlvo: v.data, criadoEm: m ? m.criadoEm : undefined,
+        arquivada: m ? m.arquivada : false, aportes: m ? m.aportes : [] });
+      var er = erros(r);
+      if (v.ja && (!isFinite(ja) || ja < 0)) er.push('Valor já guardado inválido (ex.: 500,00).');
+      var dup = estado.metas.some(function (x) { return x.id !== r.limpo.id && normalizar(x.nome) === normalizar(r.limpo.nome); });
+      if (dup) er.push('Já existe uma meta chamada “' + r.limpo.nome + '”.');
+      if (er.length) return er;
+      if (!m && ja > 0) r.limpo.aportes.push({ id: 'a' + gerarId().slice(1), data: hojeISO(), valor: dinheiro(ja), nota: 'Valor inicial' });
+      if (m) estado.metas[estado.metas.indexOf(m)] = r.limpo; else estado.metas.push(r.limpo);
+      marcarAlterado(); render();
+      avisar(m ? 'Meta atualizada.' : 'Meta “' + r.limpo.nome + '” criada.', 'sucesso');
+      return [];
+    }, m ? 'Salvar meta' : 'Criar meta');
+  }
+  function formMovMeta(id, retirar) {
+    var m = metaPorId(id);
+    if (!m) return;
+    var g = guardadoMeta(m);
+    abrirGen((retirar ? 'Retirar de ' : 'Guardar em ') + m.nome, [
+      { tipo: 'html', conteudo: el('p', { class: 'uso' }, 'Guardado até agora: ', el('b', { class: 'meta-tot' }, moeda(g / 100)), ' de ' + moeda(m.valorAlvo) + '.') },
+      { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', obrig: true, valor: '', placeholder: '0,00' },
+      { id: 'data', rotulo: 'Data', tipo: 'date', obrig: true, valor: hojeISO() },
+      { id: 'nota', rotulo: 'Observação (opcional)', largo: true, max: 80, valor: '', placeholder: retirar ? 'Ex.: usei para o conserto do carro' : 'Ex.: 13º salário' }
+    ], function (v) {
+      var val = parseValor(v.valor), er = [];
+      if (!isFinite(val) || val <= 0) er.push('Informe um valor maior que zero (ex.: 200,00).');
+      if (!dataValida(v.data)) er.push('Informe a data.');
+      if (retirar && isFinite(val) && Math.round(val * 100) > g) er.push('Não dá para retirar mais do que está guardado (' + moeda(g / 100) + ').');
+      if (er.length) return er;
+      var antes = infoMeta(m);
+      m.aportes.push({ id: 'a' + gerarId().slice(1), data: v.data, valor: dinheiro(retirar ? -val : val), nota: texto(v.nota, 80) });
+      marcarAlterado(); render();
+      var depois = infoMeta(m);
+      avisar(!antes.concluida && depois.concluida ? 'Parabéns! Você alcançou a meta “' + m.nome + '”.' : (retirar ? 'Retirada anotada em “' : 'Depósito anotado em “') + m.nome + '”.', 'sucesso');
+      return [];
+    }, retirar ? 'Retirar' : 'Guardar');
+  }
+  function formatarValorCampo(v) { return Number(v).toFixed(2).replace('.', ','); }
+  function excluirMeta(id) {
+    var m = metaPorId(id);
+    if (!m) return;
+    confirmar('Excluir meta', ['Excluir a meta “' + m.nome + '” e seus ' + plural(m.aportes.length, 'movimento', 'movimentos') + '?',
+      'Seus lançamentos não mudam. Se mudar de ideia, use “Desfazer” no aviso logo após excluir.'], 'Excluir').then(function (ok) {
+      if (!ok) return;
+      var foto = fotografia();
+      estado.metas = estado.metas.filter(function (x) { return x.id !== id; });
+      marcarAlterado(); render();
+      avisar('Meta excluída.', 'sucesso', desfazerPara(foto));
+    });
+  }
+  function excluirMovMeta(id, mov) {
+    var m = metaPorId(id), a = m && m.aportes.filter(function (x) { return x.id === mov; })[0];
+    if (!a) return;
+    confirmar('Excluir movimento', ['Excluir este movimento da meta “' + m.nome + '”?', [dataBR(a.data) + ' — ' + (a.valor > 0 ? 'Guardei ' : 'Retirei ') + moeda(Math.abs(a.valor))]], 'Excluir').then(function (ok) {
+      if (!ok) return;
+      var foto = fotografia();
+      m.aportes = m.aportes.filter(function (x) { return x.id !== mov; });
+      marcarAlterado(); render();
+      avisar('Movimento excluído.', 'sucesso', desfazerPara(foto));
+    });
+  }
+  function ligarEventosMetas() {
+    var acao = function (e) {
+      var b = e.target.closest('[data-meta-acao]');
+      if (b) {
+        var a = b.getAttribute('data-meta-acao'), id = b.getAttribute('data-id');
+        if (a === 'nova') formMeta(null);
+        else if (a === 'editar') formMeta(id);
+        else if (a === 'guardar') formMovMeta(id, false);
+        else if (a === 'retirar') formMovMeta(id, true);
+        else if (a === 'excluir') excluirMeta(id);
+        else if (a === 'excluir-mov') excluirMovMeta(id, b.getAttribute('data-mov'));
+        return;
+      }
+      var it = e.target.closest('[data-ir-meta]');
+      if (it) irParaMeta(it.getAttribute('data-ir-meta'));
+    };
+    $('abaMetas').addEventListener('click', acao);
+    $('hojeMetas').addEventListener('click', acao);
+    $('hojeMetas').addEventListener('keydown', function (e) {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-ir-meta]')) { e.preventDefault(); irParaMeta(e.target.getAttribute('data-ir-meta')); }
+    });
+  }
+  function irParaMeta(id) {
+    mostrarAba('abaMetas');
+    var c = $('metasLista').querySelector('[data-meta="' + CSS.escape(id) + '"]');
+    if (c) { c.scrollIntoView({ block: 'center' }); c.classList.add('destacado'); setTimeout(function () { c.classList.remove('destacado'); }, 1600); }
   }
 
   /* Esconder valores: preferência deste aparelho (não vai para o arquivo nem para o backup). */
@@ -10254,6 +10522,7 @@
   ligarEventosMvp2();
   ligarEventosPag();
   ligarEventosMvp3();
+  ligarEventosMetas();
   ligarEventosNuvem();
   render();
   setTimeout(avisarSeAtualizou, 400);
